@@ -1,0 +1,6 @@
+.env
+node_modules/
+*.log
+.vercel
+/tmp/
+server/data.db

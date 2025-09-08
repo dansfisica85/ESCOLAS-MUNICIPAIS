@@ -1,0 +1,66 @@
+body { font-family: system-ui, Arial, sans-serif; margin: 0; background:#f5f7fa; color:#222; }
+
+/* Login */
+.login-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.login-box { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 300px; text-align: center; }
+.login-box h2 { margin-top: 0; color: #333; }
+.login-box input { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; margin: 0.5rem 0; box-sizing: border-box; }
+.login-box button { width: 100%; padding: 0.75rem; background: #2d7ef0; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; }
+.login-box button:hover { background: #1d6ae5; }
+.error { color: #d73737; margin-top: 0.5rem; font-size: 0.9rem; }
+
+/* Header */
+header { background: #fff; padding: 1rem 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+header h1 { margin: 0; color: #2d7ef0; }
+.header-controls { display: flex; gap: 1rem; align-items: center; }
+.header-controls input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+.header-controls button { padding: 0.5rem 1rem; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+
+/* Main content */
+#app { min-height: 100vh; }
+.botoes { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem; }
+button { cursor: pointer; padding: 0.55rem 0.9rem; border: 1px solid #1d6ae5; background: #2d7ef0; color: #fff; border-radius: 4px; font-weight: 600; }
+button:hover { background: #1d6ae5; }
+button.perigo { background: #d73737; border-color: #c62828; }
+button.perigo:hover { background: #c62828; }
+
+/* Controles */
+.controles { padding: 1.5rem; background: #fff; margin: 1.5rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+.controles h2 { margin-top: 0; color: #333; }
+.config-grid { display: grid; grid-template-columns: auto auto auto; gap: 1rem; align-items: center; margin: 1rem 0; }
+.config-grid label { display: flex; align-items: center; gap: 0.5rem; }
+.config-grid input { width: 60px; padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; }
+.acoes { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.btn-file { background: #28a745; border-color: #28a745; display: inline-block; }
+.btn-file:hover { background: #218838; }
+
+/* Painel histórico */
+.panel { position: fixed; top: 10%; right: 2rem; width: 400px; max-height: 70vh; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); padding: 1rem; overflow-y: auto; z-index: 100; }
+.panel h3 { margin-top: 0; display: flex; justify-content: space-between; align-items: center; }
+.panel button { background: #6c757d; padding: 0.25rem 0.5rem; font-size: 1.2rem; }
+#historico-lista { max-height: 400px; overflow-y: auto; }
+.historico-item { padding: 0.5rem; border-bottom: 1px solid #eee; font-size: 0.85rem; }
+.historico-item:last-child { border-bottom: none; }
+
+/* Tabela */
+.tabela-container { margin: 1.5rem; overflow: auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #d0d7e2; padding: 0.4rem 0.5rem; font-size: 0.85rem; }
+thead th { background: #e8f0fe; position: sticky; top: 0; z-index: 2; }
+th.linha { background: #f0f4f8; width: 40px; }
+td[contenteditable] { outline: none; min-width: 80px; position: relative; }
+td[contenteditable]:focus { background: #fff9d6; box-shadow: inset 0 0 0 2px #ffcc33; }
+td[data-tipo="number"] { text-align: right; }
+td[data-tipo="date"] { color: #2d7ef0; }
+
+/* Utilitários */
+.hidden { display: none !important; }
+
+@media (max-width: 800px) {
+  header { flex-direction: column; gap: 1rem; }
+  .header-controls { width: 100%; justify-content: space-between; }
+  .header-controls input { width: 150px; }
+  .config-grid { grid-template-columns: 1fr; }
+  .panel { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: auto; max-height: none; border-radius: 0; }
+  td[contenteditable] { min-width: 60px; }
+}

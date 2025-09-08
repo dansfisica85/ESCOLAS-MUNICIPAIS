@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Escolas Municipais</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Login -->
+  <div id="login-screen" class="login-overlay">
+    <div class="login-box">
+      <h2>Acesso ao Sistema</h2>
+      <input type="password" id="password" placeholder="Digite a senha" />
+      <button id="login-btn">Entrar</button>
+      <div id="login-error" class="error hidden"></div>
+    </div>
+  </div>
+
+  <!-- App principal -->
+  <div id="app" class="hidden">
+    <header>
+      <h1>Escolas Municipais</h1>
+      <div class="header-controls">
+        <input type="text" id="busca" placeholder="Buscar..." />
+        <button id="logout">Sair</button>
+      </div>
+    </header>
+
+    <div id="municipios" class="botoes"></div>
+
+    <div id="area-tabela" class="hidden">
+      <div class="controles">
+        <h2 id="titulo-municipio"></h2>
+        
+        <div class="config-grid">
+          <label>Linhas: <input type="number" id="config-linhas" min="1" max="100" value="20" /></label>
+          <label>Colunas: <input type="number" id="config-colunas" min="1" max="20" value="8" /></label>
+          <button id="aplicar-config">Aplicar</button>
+        </div>
+
+        <div class="acoes">
+          <button id="historico-btn">Histórico</button>
+          <button id="exportar-csv">Exportar CSV</button>
+          <label for="importar-csv" class="btn-file">Importar CSV
+            <input type="file" id="importar-csv" accept=".csv" hidden />
+          </label>
+          <button id="limpar" class="perigo">Limpar Dados</button>
+        </div>
+      </div>
+
+      <div id="historico-panel" class="panel hidden">
+        <h3>Histórico de Alterações</h3>
+        <button id="fechar-historico">×</button>
+        <div id="historico-lista"></div>
+      </div>
+
+      <div class="tabela-container">
+        <table id="tabela">
+          <thead>
+            <tr id="cabecalho"></tr>
+          </thead>
+          <tbody id="corpo"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
