@@ -16,6 +16,11 @@ header h1 { margin: 0; color: #2d7ef0; }
 .header-controls input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
 .header-controls button { padding: 0.5rem 1rem; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
 
+.info {
+  text-align: center;
+  margin-top: 10px;
+  color: #555;
+}
 /* Botão de download especial */
 .download-btn { 
   background: #17a2b8 !important; 
