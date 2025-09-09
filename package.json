@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node api/index.js",
+    "popular": "node scripts/popular-banco.js --popular",
     "build": "echo 'Build complete'",
     "vercel-build": "echo 'Vercel build complete'"
   },
