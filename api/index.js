@@ -26,7 +26,8 @@ const client = createClient({
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'chave-secreta-dev';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'saeb2025';
+const DOWNLOAD_PASSWORD = 'uresersaeb';
 
 // Multer para upload
 const upload = multer({ dest: '/tmp/' });
@@ -228,7 +229,82 @@ app.get('/api/export/:municipio/csv', async (req, res) => {
   res.download('/tmp/export.csv', `${municipio}.csv`);
 });
 
-// Nova rota para exportar todas as planilhas em um arquivo Excel
+// Nova rota para exportar todas as planilhas em formato Markdown
+app.post('/api/export-all/markdown', async (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    // Verificar senha de download
+    if (password !== DOWNLOAD_PASSWORD) {
+      return res.status(401).json({ error: 'Senha incorreta para download' });
+    }
+    
+    let markdownContent = '# Escolas Municipais - Dados Completos\n\n';
+    markdownContent += `**Gerado em:** ${new Date().toLocaleString('pt-BR')}\n\n`;
+    markdownContent += '**Coordenadores de Polo:**\n';
+    markdownContent += '- 1 - Rita (17) 99181-9574\n';
+    markdownContent += '- 2 - Davi (16) 99260-4315\n';
+    markdownContent += '- 3 - Daihy (16) 99193-4630\n\n';
+    markdownContent += '---\n\n';
+    
+    for (const municipio of MUNICIPIOS) {
+      console.log(`Exportando ${municipio} para Markdown...`);
+      
+      // Buscar dados do município
+      const result = await client.execute({
+        sql: `SELECT linha, coluna, valor FROM celulas 
+              WHERE municipio = ? 
+              ORDER BY linha, coluna`,
+        args: [municipio]
+      });
+      
+      if (result.rows.length === 0) continue;
+      
+      markdownContent += `## ${municipio}\n\n`;
+      
+      // Criar matriz de dados
+      const maxLinha = Math.max(...result.rows.map(r => parseInt(r.linha)), 0);
+      const maxColuna = Math.max(...result.rows.map(r => parseInt(r.coluna)), 0);
+      
+      // Criar cabeçalho da tabela
+      let tableHeader = '| LINHA |';
+      for (let c = 0; c <= maxColuna; c++) {
+        tableHeader += ` COLUNA ${c + 1} |`;
+      }
+      tableHeader += '\n|-------|';
+      for (let c = 0; c <= maxColuna; c++) {
+        tableHeader += '----------|';
+      }
+      markdownContent += tableHeader + '\n';
+      
+      // Criar linhas de dados
+      for (let l = 0; l <= maxLinha; l++) {
+        let linha = `| L${l + 1} |`;
+        for (let c = 0; c <= maxColuna; c++) {
+          const celula = result.rows.find(r => 
+            parseInt(r.linha) === l && parseInt(r.coluna) === c
+          );
+          const valor = celula ? (celula.valor || '').replace(/\|/g, '\\|') : '';
+          linha += ` ${valor} |`;
+        }
+        markdownContent += linha + '\n';
+      }
+      
+      markdownContent += '\n---\n\n';
+    }
+    
+    // Retornar conteúdo Markdown
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="todas-escolas-municipais.md"');
+    res.send(markdownContent);
+    
+  } catch (error) {
+    console.error('Erro ao exportar Markdown:', error);
+    res.status(500).json({ error: 'Erro ao gerar arquivo Markdown' });
+  }
+});
+
+// Rota Excel original mantida
 app.get('/api/export-all/excel', async (req, res) => {
   try {
     const workbook = XLSX.utils.book_new();

@@ -10,17 +10,26 @@ body { font-family: system-ui, Arial, sans-serif; margin: 0; background:#f5f7fa;
 .error { color: #d73737; margin-top: 0.5rem; font-size: 0.9rem; }
 
 /* Header */
-header { background: #fff; padding: 1rem 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+header { background: #fff; padding: 1rem 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
 header h1 { margin: 0; color: #2d7ef0; }
+
+/* Informações dos coordenadores */
+.coordenadores-info {
+  font-size: 0.7rem;
+  color: #666;
+  margin-top: 0.3rem;
+  line-height: 1.2;
+  text-align: left;
+}
+.coordenadores-info strong {
+  color: #444;
+  font-size: 0.75rem;
+}
+
 .header-controls { display: flex; gap: 1rem; align-items: center; }
 .header-controls input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
 .header-controls button { padding: 0.5rem 1rem; background: #6c757d; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
 
-.info {
-  text-align: center;
-  margin-top: 10px;
-  color: #555;
-}
 /* Botão de download especial */
 .download-btn { 
   background: #17a2b8 !important; 

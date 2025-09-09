@@ -385,3 +385,65 @@ corpo.addEventListener('input', e => {
   
   atualizarBotaoSalvar();
 });
+
+// Função para baixar todas as planilhas em Markdown
+async function baixarTodas() {
+    try {
+        // Solicitar senha de download
+        const senha = prompt('Digite a senha para baixar as planilhas:');
+        if (!senha) {
+            return; // Usuário cancelou
+        }
+        
+        // Mostrar loading
+        const btn = document.getElementById('download-todas');
+        const originalText = btn.textContent;
+        btn.textContent = 'Baixando...';
+        btn.disabled = true;
+        
+        const response = await fetch('/api/export-all/markdown', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ password: senha })
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error('Senha incorreta');
+            }
+            throw new Error(`Erro: ${response.status}`);
+        }
+        
+        // Baixar arquivo
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'todas-escolas-municipais.md';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        alert('Download concluído com sucesso!');
+        
+    } catch (error) {
+        console.error('Erro ao baixar:', error);
+        alert('Erro ao baixar arquivo: ' + error.message);
+    } finally {
+        // Restaurar botão
+        const btn = document.getElementById('download-todas');
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Conectar evento do botão de download
+document.addEventListener('DOMContentLoaded', () => {
+    const downloadBtn = document.getElementById('download-todas');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', baixarTodas);
+    }
+});
