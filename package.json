@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "node api/index.js",
     "popular": "node scripts/popular-banco.js --popular",
+    "excel": "node scripts/importar-excel.js --excel",
+    "limpar": "node scripts/limpar-dados.js --limpar",
     "build": "echo 'Build complete'",
     "vercel-build": "echo 'Vercel build complete'"
   },
