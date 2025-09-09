@@ -228,6 +228,66 @@ app.get('/api/export/:municipio/csv', async (req, res) => {
   res.download('/tmp/export.csv', `${municipio}.csv`);
 });
 
+// Nova rota para exportar todas as planilhas em um arquivo Excel
+app.get('/api/export-all/excel', async (req, res) => {
+  try {
+    const workbook = XLSX.utils.book_new();
+    
+    for (const municipio of MUNICIPIOS) {
+      console.log(`Exportando ${municipio}...`);
+      
+      // Buscar dados do município
+      const result = await client.execute({
+        sql: `SELECT linha, coluna, valor FROM celulas 
+              WHERE municipio = ? 
+              ORDER BY linha, coluna`,
+        args: [municipio]
+      });
+      
+      // Criar matriz de dados
+      const maxLinha = Math.max(...result.rows.map(r => parseInt(r.linha)), 0);
+      const maxColuna = Math.max(...result.rows.map(r => parseInt(r.coluna)), 0);
+      
+      const dados = [];
+      
+      // Criar cabeçalho
+      const cabecalho = ['LINHA'];
+      for (let c = 0; c <= maxColuna; c++) {
+        cabecalho.push(`COLUNA ${c + 1}`);
+      }
+      dados.push(cabecalho);
+      
+      // Criar linhas de dados
+      for (let l = 0; l <= maxLinha; l++) {
+        const linha = [`L${l + 1}`];
+        for (let c = 0; c <= maxColuna; c++) {
+          const celula = result.rows.find(r => 
+            parseInt(r.linha) === l && parseInt(r.coluna) === c
+          );
+          linha.push(celula ? celula.valor || '' : '');
+        }
+        dados.push(linha);
+      }
+      
+      // Adicionar planilha ao workbook
+      const worksheet = XLSX.utils.aoa_to_sheet(dados);
+      XLSX.utils.book_append_sheet(workbook, worksheet, municipio);
+    }
+    
+    // Gerar arquivo Excel
+    const filename = `/tmp/todas-escolas-municipais-${Date.now()}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+    
+    res.download(filename, 'todas-escolas-municipais.xlsx', () => {
+      unlinkSync(filename);
+    });
+    
+  } catch (error) {
+    console.error('Erro ao exportar Excel:', error);
+    res.status(500).json({ error: 'Erro ao gerar arquivo Excel' });
+  }
+});
+
 // Importar CSV
 app.post('/api/import/:municipio/csv', upload.single('file'), async (req, res) => {
   const municipio = req.params.municipio.toUpperCase();

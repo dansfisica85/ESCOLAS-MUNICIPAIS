@@ -21,8 +21,11 @@
   <div id="app" class="hidden">
     <header>
       <h1>Escolas Municipais</h1>
+      <h2>Coordenadores de Polo: Rita, Davi e Daihy.</h2>
+      <h3>Contatos: (17) 99181-9574 | (16) 99260-4315 | (16) 99193-4630</h3>
       <div class="header-controls">
         <input type="text" id="busca" placeholder="Buscar..." />
+        <button id="download-todas" class="download-btn">📥 BAIXAR TODAS</button>
         <button id="logout">Sair</button>
       </div>
     </header>
@@ -33,26 +36,9 @@
       <div class="controles">
         <h2 id="titulo-municipio"></h2>
         
-        <div class="config-grid">
-          <label>Linhas: <input type="number" id="config-linhas" min="1" max="100" value="20" /></label>
-          <label>Colunas: <input type="number" id="config-colunas" min="1" max="20" value="8" /></label>
-          <button id="aplicar-config">Aplicar</button>
-        </div>
-
         <div class="acoes">
-          <button id="historico-btn">Histórico</button>
-          <button id="exportar-csv">Exportar CSV</button>
-          <label for="importar-csv" class="btn-file">Importar CSV
-            <input type="file" id="importar-csv" accept=".csv" hidden />
-          </label>
-          <button id="limpar" class="perigo">Limpar Dados</button>
+          <button id="salvar" class="salvar">SALVAR</button>
         </div>
-      </div>
-
-      <div id="historico-panel" class="panel hidden">
-        <h3>Histórico de Alterações</h3>
-        <button id="fechar-historico">×</button>
-        <div id="historico-lista"></div>
       </div>
 
       <div class="tabela-container">

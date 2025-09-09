@@ -8,32 +8,20 @@ const loginBtn = document.getElementById('login-btn');
 const loginError = document.getElementById('login-error');
 const logoutBtn = document.getElementById('logout');
 const buscaInput = document.getElementById('busca');
+const downloadTodasBtn = document.getElementById('download-todas');
 
 const municipiosDiv = document.getElementById('municipios');
 const areaTabela = document.getElementById('area-tabela');
 const tituloMunicipio = document.getElementById('titulo-municipio');
 const cabecalho = document.getElementById('cabecalho');
 const corpo = document.getElementById('corpo');
-
-const configLinhas = document.getElementById('config-linhas');
-const configColunas = document.getElementById('config-colunas');
-const aplicarConfigBtn = document.getElementById('aplicar-config');
-
-const historicoBtn = document.getElementById('historico-btn');
-const historicoPanel = document.getElementById('historico-panel');
-const fecharHistoricoBtn = document.getElementById('fechar-historico');
-const historicoLista = document.getElementById('historico-lista');
-
-const exportarCsvBtn = document.getElementById('exportar-csv');
-const importarCsvInput = document.getElementById('importar-csv');
-const limparBtn = document.getElementById('limpar');
+const salvarBtn = document.getElementById('salvar');
 
 // Estado
 let token = localStorage.getItem('token');
 let municipioAtual = null;
 let cacheValores = new Map();
-let LINHAS = 20;
-let COLUNAS = 8;
+let alteracoesPendentes = false;
 
 // Verificar autenticação inicial
 if (token) {
@@ -130,6 +118,39 @@ async function carregarMunicipios() {
   });
 }
 
+// Funcionalidade do botão de download
+downloadTodasBtn.addEventListener('click', async () => {
+  const textoOriginal = downloadTodasBtn.textContent;
+  
+  try {
+    downloadTodasBtn.textContent = '⏳ Gerando arquivo...';
+    downloadTodasBtn.disabled = true;
+    
+    // Criar link temporário para download
+    const link = document.createElement('a');
+    link.href = `${API}/export-all/excel`;
+    link.download = 'todas-escolas-municipais.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Feedback de sucesso
+    downloadTodasBtn.textContent = '✅ Baixado!';
+    setTimeout(() => {
+      downloadTodasBtn.textContent = textoOriginal;
+    }, 3000);
+    
+  } catch (error) {
+    console.error('Erro ao baixar arquivo:', error);
+    downloadTodasBtn.textContent = '❌ Erro';
+    setTimeout(() => {
+      downloadTodasBtn.textContent = textoOriginal;
+    }, 3000);
+  } finally {
+    downloadTodasBtn.disabled = false;
+  }
+});
+
 async function selecionarMunicipio(m) {
   municipioAtual = m;
   tituloMunicipio.textContent = m;
@@ -140,27 +161,25 @@ async function selecionarMunicipio(m) {
     headers: { Authorization: `Bearer ${token}` }
   });
   const config = await configRes.json();
-  LINHAS = config.linhas;
-  COLUNAS = config.colunas;
-  configLinhas.value = LINHAS;
-  configColunas.value = COLUNAS;
   
-  montarTabela();
+  montarTabela(config.linhas, config.colunas);
   cacheValores.clear();
+  alteracoesPendentes = false;
+  atualizarBotaoSalvar();
   await carregarValores(m);
 }
 
-function montarTabela() {
-  // Cabeçalho
-  cabecalho.innerHTML = '<th>#</th>' + 
-    Array.from({length: COLUNAS}, (_, i) => `<th>C${i+1}</th>`).join('');
+function montarTabela(linhas, colunas) {
+  // Cabeçalho simples - deixar o CSS fazer o trabalho de estilização
+  cabecalho.innerHTML = '<th>LINHA</th>' + 
+    Array.from({length: colunas}, (_, i) => `<th>COLUNA ${i+1}</th>`).join('');
   
   // Corpo
   corpo.innerHTML = '';
-  for (let l = 0; l < LINHAS; l++) {
+  for (let l = 0; l < linhas; l++) {
     const tr = document.createElement('tr');
     tr.innerHTML = `<th class="linha">L${l+1}</th>` + 
-      Array.from({length: COLUNAS}, (_, c) => {
+      Array.from({length: colunas}, (_, c) => {
         return `<td contenteditable data-l="${l}" data-c="${c}" data-tipo="text"></td>`;
       }).join('');
     corpo.appendChild(tr);
@@ -180,6 +199,9 @@ async function carregarValores(m) {
   corpo.querySelectorAll('td[contenteditable]').forEach(td => {
     td.textContent = '';
     td.dataset.tipo = 'text';
+    td.dataset.original = '';
+    td.style.backgroundColor = '';
+    td.classList.remove('palavra-cabecalho');
   });
   
   dados.forEach(({linha, coluna, valor, tipo}) => {
@@ -188,38 +210,132 @@ async function carregarValores(m) {
     if (td) {
       td.textContent = valor;
       td.dataset.tipo = tipo || 'text';
-      cacheValores.set(`${linha}-${coluna}`, valor);
+      td.dataset.original = valor; // Armazenar valor original
+      
+      // Verificar se é uma palavra especial do cabeçalho
+      if (isPalavraCabecalho(valor)) {
+        td.classList.add('palavra-cabecalho');
+      }
     }
   });
+  
+  // Resetar estado de alterações
+  cacheValores.clear();
+  alteracoesPendentes = false;
+  atualizarBotaoSalvar();
 }
 
-// Configuração de linhas/colunas
-aplicarConfigBtn.addEventListener('click', async () => {
-  const novasLinhas = parseInt(configLinhas.value);
-  const novasColunas = parseInt(configColunas.value);
-  
-  if (novasLinhas < 1 || novasColunas < 1 || novasLinhas > 100 || novasColunas > 20) {
-    alert('Valores inválidos (linhas: 1-100, colunas: 1-20)');
-    return;
+// Lista de palavras especiais que devem ter formatação especial
+const palavrasCabecalho = [
+  'L1', 'Município', 'Polo', 'CoEscolaCenso', 'NOME DO PROFESSOR REGENTE', 
+  'CPF - PROFESSOR REGENTE', 'WHATSAPP PROF REGENTE', 'NOME DO DIRETOR(A) DA UE', 
+  'CPF DIRETOR(A) DA UE', 'WHATSAPP DIRETOR(A) DA UE', 'UE - UNIDADE ESCOLAR', 
+  'Localização', 'Rede', 'Telefone1', 'Telefone2', 'CoTurmaCenso', 'Turma', 
+  'Série', 'Turno', 'ObservacoesDaEscola', 'TemCiencias', 'QtdDiasAplicacao'
+];
+
+function isPalavraCabecalho(valor) {
+  if (!valor) return false;
+  const valorTrimmed = valor.trim();
+  return palavrasCabecalho.some(palavra => 
+    valorTrimmed === palavra || valorTrimmed.toUpperCase() === palavra.toUpperCase()
+  );
+}
+
+function atualizarBotaoSalvar() {
+  if (alteracoesPendentes) {
+    salvarBtn.textContent = 'SALVAR *';
+    salvarBtn.style.background = '#dc3545';
+    salvarBtn.style.color = '#ffffff';
+    salvarBtn.disabled = false;
+  } else {
+    salvarBtn.textContent = 'SALVAR';
+    salvarBtn.style.background = '#28a745';
+    salvarBtn.style.color = '#ffffff';
+    salvarBtn.disabled = false;
   }
+}
+
+// Evento do botão salvar
+salvarBtn.addEventListener('click', async () => {
+  if (!municipioAtual || !alteracoesPendentes) return;
   
-  await fetch(`${API}/configuracao/${encodeURIComponent(municipioAtual)}`, {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}` 
-    },
-    body: JSON.stringify({ linhas: novasLinhas, colunas: novasColunas })
-  });
+  salvarBtn.textContent = 'Salvando...';
+  salvarBtn.disabled = true;
   
-  LINHAS = novasLinhas;
-  COLUNAS = novasColunas;
-  montarTabela();
-  await carregarValores(municipioAtual);
+  try {
+    // Coletar apenas as alterações pendentes
+    const alteracoesParaSalvar = new Map();
+    
+    // Percorrer todas as células editáveis para detectar mudanças
+    corpo.querySelectorAll('td[contenteditable]').forEach(td => {
+      const linha = Number(td.dataset.l);
+      const coluna = Number(td.dataset.c);
+      const valorAtual = td.textContent.trim();
+      const chave = `${linha}-${coluna}`;
+      
+      // Se a célula foi modificada, adicionar à lista de salvamento
+      if (cacheValores.has(chave)) {
+        alteracoesParaSalvar.set(chave, valorAtual);
+      }
+    });
+    
+    console.log(`Salvando ${alteracoesParaSalvar.size} alterações...`);
+    
+    // Salvar cada alteração
+    for (const [chave, valor] of alteracoesParaSalvar.entries()) {
+      const [linha, coluna] = chave.split('-').map(Number);
+      const td = corpo.querySelector(`td[data-l="${linha}"][data-c="${coluna}"]`);
+      const tipo = td?.dataset.tipo || 'text';
+      
+      const response = await fetch(`${API}/celulas/${encodeURIComponent(municipioAtual)}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ linha, coluna, valor, tipo })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao salvar célula L${linha+1}C${coluna+1}`);
+      }
+    }
+    
+    // Limpar cache de alterações após salvamento bem-sucedido
+    cacheValores.clear();
+    alteracoesPendentes = false;
+    atualizarBotaoSalvar();
+    
+    // Feedback visual de sucesso
+    salvarBtn.textContent = 'SALVO!';
+    salvarBtn.style.background = '#28a745';
+    
+    setTimeout(() => {
+      if (!alteracoesPendentes) {
+        salvarBtn.textContent = 'SALVAR';
+        atualizarBotaoSalvar();
+      }
+    }, 2000);
+    
+  } catch (error) {
+    alert('Erro ao salvar dados: ' + error.message);
+    console.error('Erro detalhado:', error);
+    
+    // Manter o estado de alterações pendentes em caso de erro
+    salvarBtn.textContent = 'ERRO - TENTAR NOVAMENTE';
+    salvarBtn.style.background = '#dc3545';
+    
+    setTimeout(() => {
+      atualizarBotaoSalvar();
+    }, 3000);
+    
+  } finally {
+    salvarBtn.disabled = false;
+  }
 });
 
-// Salvamento de células
-let timeout;
+// Eventos de input nas células editáveis
 corpo.addEventListener('input', e => {
   const td = e.target.closest('td[contenteditable]');
   if (!td || municipioAtual == null) return;
@@ -237,93 +353,35 @@ corpo.addEventListener('input', e => {
   }
   
   td.dataset.tipo = tipo;
-  cacheValores.set(`${linha}-${coluna}`, valor);
   
-  if (timeout) clearTimeout(timeout);
-  timeout = setTimeout(salvarAlteracoes, 600);
-});
-
-async function salvarAlteracoes() {
-  if (!municipioAtual) return;
-  const entradas = Array.from(cacheValores.entries());
+  // Verificar se é uma palavra especial do cabeçalho e aplicar formatação
+  if (isPalavraCabecalho(valor)) {
+    td.classList.add('palavra-cabecalho');
+  } else {
+    td.classList.remove('palavra-cabecalho');
+  }
   
-  for (const [chave, valor] of entradas) {
-    const [linha, coluna] = chave.split('-').map(Number);
-    const td = corpo.querySelector(`td[data-l="${linha}"][data-c="${coluna}"]`);
-    const tipo = td?.dataset.tipo || 'text';
+  // Marcar célula como modificada
+  const chave = `${linha}-${coluna}`;
+  const valorOriginal = td.dataset.original || '';
+  
+  if (valor !== valorOriginal) {
+    cacheValores.set(chave, valor);
+    alteracoesPendentes = true;
+    // Destacar célula modificada apenas se não for palavra especial
+    if (!isPalavraCabecalho(valor)) {
+      td.style.backgroundColor = '#fff3cd';
+    }
+  } else {
+    cacheValores.delete(chave);
+    // Remover indicador visual apenas se não for palavra especial
+    if (!isPalavraCabecalho(valor)) {
+      td.style.backgroundColor = '';
+    }
     
-    await fetch(`${API}/celulas/${encodeURIComponent(municipioAtual)}`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` 
-      },
-      body: JSON.stringify({ linha, coluna, valor, tipo })
-    });
-  }
-}
-
-// Histórico
-historicoBtn.addEventListener('click', async () => {
-  if (!municipioAtual) return;
-  
-  const res = await fetch(`${API}/historico/${encodeURIComponent(municipioAtual)}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const historico = await res.json();
-  
-  historicoLista.innerHTML = historico.map(h => `
-    <div class="historico-item">
-      <strong>L${h.linha + 1}C${h.coluna + 1}</strong><br>
-      "${h.valor_anterior}" → "${h.valor_novo}"<br>
-      <small>${new Date(h.timestamp).toLocaleString('pt-BR')}</small>
-    </div>
-  `).join('');
-  
-  historicoPanel.classList.remove('hidden');
-});
-
-fecharHistoricoBtn.addEventListener('click', () => {
-  historicoPanel.classList.add('hidden');
-});
-
-// Exportar CSV
-exportarCsvBtn.addEventListener('click', () => {
-  if (!municipioAtual) return;
-  window.open(`${API}/export/${encodeURIComponent(municipioAtual)}/csv`, '_blank');
-});
-
-// Importar CSV
-importarCsvInput.addEventListener('change', async (e) => {
-  if (!municipioAtual || !e.target.files[0]) return;
-  
-  const formData = new FormData();
-  formData.append('file', e.target.files[0]);
-  
-  const res = await fetch(`${API}/import/${encodeURIComponent(municipioAtual)}/csv`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData
-  });
-  
-  const result = await res.json();
-  if (result.ok) {
-    alert(`${result.imported} registros importados`);
-    await carregarValores(municipioAtual);
+    // Verificar se ainda há alterações pendentes
+    alteracoesPendentes = cacheValores.size > 0;
   }
   
-  e.target.value = '';
-});
-
-// Limpar dados
-limparBtn.addEventListener('click', async () => {
-  if (!municipioAtual) return;
-  if (!confirm('Tem certeza que deseja apagar todos os dados deste município?')) return;
-  
-  await fetch(`${API}/celulas/${encodeURIComponent(municipioAtual)}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  
-  await selecionarMunicipio(municipioAtual);
+  atualizarBotaoSalvar();
 });
