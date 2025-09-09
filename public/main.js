@@ -66,6 +66,10 @@ passwordInput.addEventListener('keypress', e => {
 
 async function fazerLogin() {
   const password = passwordInput.value;
+  console.log('Iniciando login...');
+  console.log('Senha digitada:', password);
+  console.log('URL da API:', API + '/login');
+  
   try {
     const res = await fetch(API + '/login', {
       method: 'POST',
@@ -73,7 +77,11 @@ async function fazerLogin() {
       body: JSON.stringify({ password })
     });
     
+    console.log('Resposta recebida:', res.status);
+    
     const data = await res.json();
+    console.log('Dados da resposta:', data);
+    
     if (data.success) {
       token = data.token;
       localStorage.setItem('token', token);
@@ -84,6 +92,7 @@ async function fazerLogin() {
       loginError.classList.remove('hidden');
     }
   } catch (err) {
+    console.error('Erro na requisição:', err);
     loginError.textContent = 'Erro de conexão';
     loginError.classList.remove('hidden');
   }

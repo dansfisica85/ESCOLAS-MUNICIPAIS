@@ -90,6 +90,12 @@ const MUNICIPIOS = [
 // Rotas de autenticação
 app.post('/api/login', async (req, res) => {
   const { password } = req.body;
+  
+  console.log('Tentativa de login:');
+  console.log('Password recebida:', JSON.stringify(password));
+  console.log('Password esperada:', JSON.stringify(ADMIN_PASSWORD));
+  console.log('São iguais?', password === ADMIN_PASSWORD);
+  
   if (password === ADMIN_PASSWORD) {
     const token = jwt.sign({ admin: true }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ token, success: true });
@@ -101,6 +107,15 @@ app.post('/api/login', async (req, res) => {
 // Rotas públicas
 app.get('/api/municipios', (req, res) => {
   res.json(MUNICIPIOS);
+});
+
+// Rota de teste para debug da senha
+app.get('/api/teste-senha', (req, res) => {
+  res.json({ 
+    senha_configurada: ADMIN_PASSWORD,
+    senha_env: process.env.ADMIN_PASSWORD,
+    todas_vars_env: Object.keys(process.env).filter(k => k.includes('ADMIN'))
+  });
 });
 
 // Rotas protegidas
