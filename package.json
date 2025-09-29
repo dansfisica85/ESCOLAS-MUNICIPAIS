@@ -11,7 +11,7 @@
     "vercel-build": "echo 'Vercel build complete'"
   },
   "dependencies": {
-    "@libsql/client": "^0.14.0",
+    "@libsql/client": "^0.15.15",
     "bcryptjs": "^2.4.3",
     "cors": "2.8.5",
     "csv-parser": "^3.0.0",
